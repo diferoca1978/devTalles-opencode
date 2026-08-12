@@ -1,3 +1,4 @@
+import { paint } from "./colors";
 import type { AppState } from "./types";
 
 const BAR = "═══════════════════════════════════════";
@@ -14,17 +15,18 @@ export function renderMenu(state: AppState): string {
   const citiesCount = state.cities.length;
   const unitLabel = state.unit;
   const lines = [
-    BAR,
-    pad("WEATHER CLI"),
-    BAR,
-    "  1. Clima de ciudad default",
-    `  2. Clima de todas las ciudades (${citiesCount})`,
-    "  3. Buscar y agregar ciudad",
-    "  4. Eliminar ciudad",
-    "  5. Establecer ciudad default",
-    `  8. Ajustes (${unitLabel})`,
-    "  9. Salir",
-    BAR,
+    paint(BAR, "cyan"),
+    paint(pad("WEATHER CLI"), "cyan"),
+    paint(BAR, "cyan"),
+    paint("  1. Clima de ciudad default", "cyan"),
+    paint(`  2. Clima de todas las ciudades (${citiesCount})`, "cyan"),
+    paint("  3. Buscar y agregar ciudad", "cyan"),
+    paint("  4. Eliminar ciudad", "cyan"),
+    paint("  5. Establecer ciudad default", "cyan"),
+    paint("  6. Pronóstico 7 días", "cyan"),
+    paint(`  8. Ajustes (${unitLabel})`, "cyan"),
+    paint("  9. Salir", "cyan"),
+    paint(BAR, "cyan"),
   ];
   return lines.join("\n");
 }

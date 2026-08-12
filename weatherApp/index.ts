@@ -1,4 +1,4 @@
-import { isExit, isValidOption, optionAddCity, optionAllCities, optionDefaultWeather, optionRemoveCity, optionSetDefault, optionSettings } from "./src/handlers";
+import { isExit, isValidOption, optionAddCity, optionAllCities, option7DayForecast, optionDefaultWeather, optionRemoveCity, optionSetDefault, optionSettings } from "./src/handlers";
 import { printMenu, printSeparator, prompt } from "./src/menu";
 import { loadState } from "./src/storage";
 import type { AppState } from "./src/types";
@@ -19,6 +19,9 @@ async function dispatch(option: string, state: AppState): Promise<void> {
       break;
     case "5":
       await optionSetDefault(state);
+      break;
+    case "6":
+      await option7DayForecast(state);
       break;
     case "8":
       await optionSettings(state);
