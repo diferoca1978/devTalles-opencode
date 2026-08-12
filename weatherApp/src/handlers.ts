@@ -1,11 +1,14 @@
 import { describeWeatherCode, formatTemp, geocode, getDailyForecast, getForecast } from "./api";
 import { paint } from "./colors";
+import { withLoading } from "./loading";
 import { printSeparator, prompt } from "./menu";
 import { saveState } from "./storage";
 import type { AppState, City, Unit } from "./types";
 
 async function showWeather(city: City, state: AppState): Promise<void> {
-  const forecast = await getForecast(city.latitude, city.longitude, state.unit);
+  const forecast = await withLoading("Obteniendo el clima…", () =>
+    getForecast(city.latitude, city.longitude, state.unit),
+  );
   if (!forecast) {
     console.log(paint(`  No se pudo obtener el clima de ${cityLabel(city)}.`, "red"));
     return;
@@ -94,7 +97,9 @@ async function pickCity(state: AppState): Promise<City | null> {
 export async function option7DayForecast(state: AppState): Promise<void> {
   const city = await pickCity(state);
   if (!city) return;
-  const forecast = await getDailyForecast(city.latitude, city.longitude, state.unit);
+  const forecast = await withLoading("Obteniendo el pronóstico…", () =>
+    getDailyForecast(city.latitude, city.longitude, state.unit),
+  );
   if (!forecast) {
     console.log(paint(`  No se pudo obtener el pronóstico de ${cityLabel(city)}.`, "red"));
     return;
@@ -116,17 +121,34 @@ export async function option7DayForecast(state: AppState): Promise<void> {
   });
 }
 
-export async function optionAddCity(state: AppState): Promise<void> {
+async function searchCity(): Promise<City | null> {
   const name = prompt("  Nombre de la ciudad a buscar: ");
   if (!name || name.trim() === "") {
     console.log(paint("  Operación cancelada.", "red"));
-    return;
+    return null;
   }
-  const city = await geocode(name.trim());
-  if (!city) {
+  const results = await withLoading("Buscando ciudad…", () => geocode(name.trim()));
+  if (results.length === 0) {
     console.log(paint(`  No se encontró "${name.trim()}".`, "red"));
-    return;
+    return null;
   }
+  if (results.length === 1) return results[0] ?? null;
+  printSeparator();
+  results.forEach((c, i) => {
+    console.log(`  ${i + 1}. ${cityLabel(c)}`);
+  });
+  const input = prompt("  Selecciona una opción: ");
+  const idx = input ? Number.parseInt(input, 10) - 1 : NaN;
+  if (Number.isNaN(idx) || idx < 0 || idx >= results.length) {
+    console.log(paint("  Selección inválida.", "red"));
+    return null;
+  }
+  return results[idx] ?? null;
+}
+
+export async function optionAddCity(state: AppState): Promise<void> {
+  const city = await searchCity();
+  if (!city) return;
   const exists =
     state.cities.some((c) => c.id === city.id) ||
     state.defaultCity?.id === city.id;
@@ -164,16 +186,8 @@ export async function optionRemoveCity(state: AppState): Promise<void> {
 }
 
 export async function searchAndSetDefault(state: AppState): Promise<void> {
-  const name = prompt("  Nombre de la ciudad: ");
-  if (!name || name.trim() === "") {
-    console.log(paint("  Operación cancelada.", "red"));
-    return;
-  }
-  const city = await geocode(name.trim());
-  if (!city) {
-    console.log(paint(`  No se encontró "${name.trim()}".`, "red"));
-    return;
-  }
+  const city = await searchCity();
+  if (!city) return;
   state.defaultCity = city;
   await saveState(state);
   console.log(paint(`  Ciudad default: ${cityLabel(city)}`, "green"));

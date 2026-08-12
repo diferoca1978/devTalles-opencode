@@ -9,6 +9,7 @@ import type {
 
 const GEO_URL = "https://geocoding-api.open-meteo.com/v1/search";
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast";
+const GEO_COUNT = 5;
 
 function toCity(r: GeoResult): City {
   return {
@@ -22,16 +23,15 @@ function toCity(r: GeoResult): City {
   };
 }
 
-export async function geocode(name: string): Promise<City | null> {
-  const url = `${GEO_URL}?name=${encodeURIComponent(name)}&count=1&language=es&format=json`;
+export async function geocode(name: string): Promise<City[]> {
+  const url = `${GEO_URL}?name=${encodeURIComponent(name)}&count=${GEO_COUNT}&language=es&format=json`;
   try {
     const res = await fetch(url);
-    if (!res.ok) return null;
+    if (!res.ok) return [];
     const data = (await res.json()) as GeoResponse;
-    const result = data.results?.[0];
-    return result ? toCity(result) : null;
+    return (data.results ?? []).map(toCity);
   } catch {
-    return null;
+    return [];
   }
 }
 
