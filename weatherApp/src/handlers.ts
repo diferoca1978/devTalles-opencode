@@ -1,7 +1,7 @@
 import { describeWeatherCode, formatTemp, geocode, getDailyForecast, getForecast } from "./api";
 import { paint } from "./colors";
 import { withLoading } from "./loading";
-import { printSeparator, prompt } from "./menu";
+import { printSeparator, prompt } from "./ui";
 import { saveState } from "./storage";
 import type { AppState, City, Unit } from "./types";
 
@@ -234,12 +234,4 @@ export async function optionSettings(state: AppState): Promise<void> {
   state.unit = next;
   await saveState(state);
   console.log(paint(`  Unidad actual: ${next}`, "green"));
-}
-
-export function isExit(option: string): boolean {
-  return option === "9";
-}
-
-export function isValidOption(option: string): boolean {
-  return ["1", "2", "3", "4", "5", "6", "8", "9"].includes(option);
 }

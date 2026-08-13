@@ -1,4 +1,6 @@
 import { paint } from "./colors";
+import { MENU_OPTIONS } from "./options";
+import type { MenuOption } from "./options";
 import type { AppState } from "./types";
 
 const BAR = "═══════════════════════════════════════";
@@ -11,21 +13,17 @@ function pad(line: string): string {
   return `${" ".repeat(Math.max(left, 0))}${line}${" ".repeat(Math.max(right, 0))}`;
 }
 
+function optionLine(option: MenuOption, state: AppState): string {
+  const label = typeof option.label === "function" ? option.label(state) : option.label;
+  return `  ${option.key}. ${label}`;
+}
+
 export function renderMenu(state: AppState): string {
-  const citiesCount = state.cities.length;
-  const unitLabel = state.unit;
   const lines = [
     paint(BAR, "cyan"),
     paint(pad("WEATHER CLI"), "cyan"),
     paint(BAR, "cyan"),
-    paint("  1. Clima de ciudad default", "cyan"),
-    paint(`  2. Clima de todas las ciudades (${citiesCount})`, "cyan"),
-    paint("  3. Buscar y agregar ciudad", "cyan"),
-    paint("  4. Eliminar ciudad", "cyan"),
-    paint("  5. Establecer ciudad default", "cyan"),
-    paint("  6. Pronóstico 7 días", "cyan"),
-    paint(`  8. Ajustes (${unitLabel})`, "cyan"),
-    paint("  9. Salir", "cyan"),
+    ...MENU_OPTIONS.map((o) => paint(optionLine(o, state), "cyan")),
     paint(BAR, "cyan"),
   ];
   return lines.join("\n");
@@ -33,12 +31,4 @@ export function renderMenu(state: AppState): string {
 
 export function printMenu(state: AppState): void {
   console.log(renderMenu(state));
-}
-
-export function printSeparator(): void {
-  console.log("\n─────────────────────────────────────\n");
-}
-
-export function prompt(message: string): string | null {
-  return globalThis.prompt(message);
 }

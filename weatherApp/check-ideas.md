@@ -5,6 +5,6 @@ Revisión Weather CLI
 - [x] **Ciudades:** geocoding solo trae 1 resultado; nombres ambiguos pueden fallar.
 - [ ] **Tests:** no existen; conviene al menos probar storage y las APIs con mocks.
 - [x] **Binario:** compila bien; revisar que `./weather` guarde datos en `~/.config/weather-cli/`.
-- [ ] **Escalabilidad:** ¿qué tan fácil será expandir con nuevas funcionalidades?
+- [x] **Escalabilidad:** ¿qué tan fácil será expandir con nuevas funcionalidades?
 - [x] **Carga:** ¿hay estado de carga en las tareas asíncronas?
 - [x] **7 Days forecast** agregar la posibilidad de obtener el pronostico del clima para los proximos 7 dias.
