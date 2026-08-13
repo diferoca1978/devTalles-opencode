@@ -4,35 +4,63 @@ import { prompt } from "./presentation/input";
 import { loadState } from "./storage";
 import type { AppState } from "./types";
 
-async function dispatch(option: string, state: AppState): Promise<void> {
-  const run = getHandler(option);
+export interface CliDependencies {
+  loadState: typeof loadState;
+  printMenu: typeof printMenu;
+  prompt: typeof prompt;
+  isExit: typeof isExit;
+  isValidOption: typeof isValidOption;
+  getHandler: typeof getHandler;
+  printSeparator: typeof printSeparator;
+  log: (...messages: string[]) => void;
+}
+
+const defaultDependencies: CliDependencies = {
+  loadState,
+  printMenu,
+  prompt,
+  isExit,
+  isValidOption,
+  getHandler,
+  printSeparator,
+  log: (...messages) => console.log(...messages),
+};
+
+export async function dispatch(
+  option: string,
+  state: AppState,
+  resolveHandler: typeof getHandler = getHandler,
+): Promise<void> {
+  const run = resolveHandler(option);
   if (run) await run(state);
 }
 
-async function main(): Promise<void> {
-  const state = await loadState();
+export async function main(deps: CliDependencies = defaultDependencies): Promise<void> {
+  const state = await deps.loadState();
 
   while (true) {
-    printMenu(state);
-    const raw = prompt("  Selecciona una opción: ");
+    deps.printMenu(state);
+    const raw = deps.prompt("  Selecciona una opción: ");
     const option = raw === null ? "" : raw.trim();
-    console.log();
+    deps.log();
     if (raw === null) {
-      console.log("  ¡Hasta luego!");
-      process.exit(0);
+      deps.log("  ¡Hasta luego!");
+      return;
     }
-    if (isExit(option)) {
-      console.log("  ¡Hasta luego!");
-      process.exit(0);
+    if (deps.isExit(option)) {
+      deps.log("  ¡Hasta luego!");
+      return;
     }
-    if (!isValidOption(option)) {
-      console.log("  Opción inválida. Intenta de nuevo.");
-      printSeparator();
+    if (!deps.isValidOption(option)) {
+      deps.log("  Opción inválida. Intenta de nuevo.");
+      deps.printSeparator();
       continue;
     }
-    await dispatch(option, state);
-    printSeparator();
+    await dispatch(option, state, deps.getHandler);
+    deps.printSeparator();
   }
 }
 
-main();
+if (import.meta.main) {
+  await main();
+}

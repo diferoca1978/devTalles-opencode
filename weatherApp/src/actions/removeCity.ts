@@ -5,7 +5,10 @@ import type { AppState } from "../types";
 import { paint } from "../utils/colors";
 import { cityLabel } from "./shared";
 
-export async function optionRemoveCity(state: AppState): Promise<void> {
+export async function optionRemoveCity(
+  state: AppState,
+  persist = saveCities,
+): Promise<void> {
   if (state.cities.length === 0) {
     console.log(paint("  No hay ciudades registradas.", "red"));
     return;
@@ -25,6 +28,6 @@ export async function optionRemoveCity(state: AppState): Promise<void> {
     console.log(paint("  Selección inválida.", "red"));
     return;
   }
-  await saveCities(state, state.cities);
+  await persist(state, state.cities);
   console.log(paint(`  Eliminada: ${cityLabel(removed)}`, "green"));
 }
