@@ -1,41 +1,3 @@
-export type Unit = "°C" | "°F";
-
-export interface City {
-  id: number;
-  name: string;
-  latitude: number;
-  longitude: number;
-  country: string;
-  admin1?: string;
-  timezone?: string;
-}
-
-export interface AppState {
-  defaultCity: City | null;
-  cities: City[];
-  unit: Unit;
-}
-
-export interface GeoResult {
-  id: number;
-  name: string;
-  latitude: number;
-  longitude: number;
-  elevation?: number;
-  country_code?: string;
-  country?: string;
-  admin1?: string;
-  admin2?: string;
-  admin3?: string;
-  timezone?: string;
-  population?: number;
-}
-
-export interface GeoResponse {
-  results?: GeoResult[];
-  generationtime_ms?: number;
-}
-
 export interface ForecastCurrent {
   time: string;
   interval: number;
@@ -80,4 +42,9 @@ export interface DailyForecastResponse {
     temperature_2m_min: string;
   };
   daily: ForecastDaily;
+}
+
+export interface WeatherDescription {
+  emoji: string;
+  label: string;
 }

@@ -1,8 +1,8 @@
-import { printMenu } from "./src/menu";
-import { getHandler, isExit, isValidOption } from "./src/options";
-import { printSeparator, prompt } from "./src/ui";
-import { loadState } from "./src/storage";
-import type { AppState } from "./src/types";
+import { printSeparator } from "./presentation/output";
+import { printMenu, getHandler, isExit, isValidOption } from "./presentation/menu";
+import { prompt } from "./presentation/input";
+import { loadState } from "./storage";
+import type { AppState } from "./types";
 
 async function dispatch(option: string, state: AppState): Promise<void> {
   const run = getHandler(option);
