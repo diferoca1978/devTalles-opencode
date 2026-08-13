@@ -12,9 +12,9 @@ Repo-specific guidance for OpenCode sessions working in `weatherApp/`.
 
 Scripts in `package.json`:
 
-- Run the app: `bun run start` (or `bun run index.ts`)
+- Run the app: `bun run start` (or `bun run src/index.ts`)
 - Dev/watch mode: `bun run dev`
-- Build the standalone binary (project end goal): `bun run build` (compiles `index.ts` → `weather`)
+- Build the standalone binary (project end goal): `bun run build` (compiles `src/index.ts` → `weather`)
 
 Typecheck: `bunx tsc --noEmit` (tsconfig has `noEmit: true`, strict mode, `noUncheckedIndexedAccess`, `verbatimModuleSyntax`).
 
@@ -40,17 +40,41 @@ Menu options (numbered output in the terminal — see README mock for the layout
 8. Ajustes (°C/°F)
 9. Salir
 
-Output is colored (ANSI, zero deps): cyan = menu, yellow = temps, green = success, red = errors. Colors auto-disable when stdout is not a TTY (`NO_COLOR` also respected). Async network fetches show an animated braille spinner (`src/loading.ts`) that auto-disables off-TTY.
+Output is colored (ANSI, zero deps): cyan = menu, yellow = temps, green = success, red = errors. Colors auto-disable when stdout is not a TTY (`NO_COLOR` also respected). Async network fetches show an animated braille spinner (`src/utils/loading.ts`) that auto-disables off-TTY.
 
 ## File layout
 
-- `index.ts` — entrypoint; main loop + `dispatch()` that routes a menu option to a handler.
-- `src/menu.ts` — menu rendering (`renderMenu`/`printMenu`), separator, and `prompt()` (uses `globalThis.prompt`).
-- `src/handlers.ts` — one exported async handler per menu option plus shared helpers (`ensureDefault`, `pickCity`, `searchCity`, `cityLabel`).
-- `src/api.ts` — `geocode`, `getForecast`, `getDailyForecast`, `formatTemp`, `describeWeatherCode` (WMO→emoji+Spanish label).
-- `src/storage.ts` — load/save `AppState` to `$XDG_CONFIG_HOME/weather-cli/state.json` (default `~/.config/weather-cli/`); legacy `~/.weather-cli/state.json` auto-migrated on first load.
-- `src/types.ts` — shared types (`Unit`, `City`, `AppState`, OpenMeteo response shapes).
-- `src/colors.ts` — ANSI color helpers (`paint(text, color)`); auto-disabled off-TTY.
-- `src/loading.ts` — `withLoading(message, task)` braille spinner; auto-disables off-TTY.
+`src/` is organized by domain (per `references/file-system.md`):
 
-State (`AppState`) lives in `$XDG_CONFIG_HOME/weather-cli/state.json` (default `~/.config/weather-cli/state.json`): `defaultCity`, `cities[]`, `unit`.
+- `src/index.ts` — entrypoint; main loop + `dispatch()` that resolves an option to its handler via `getHandler()` from `src/presentation/menu.ts`.
+- `src/actions/` — one module per menu option plus `shared.ts`: `getWeather.ts` (`optionDefaultWeather` + local `ensureDefault`), `listCities.ts` (`optionAllCities`), `addCity.ts` (`optionAddCity`), `removeCity.ts` (`optionRemoveCity`), `setDefaultCity.ts` (`optionSetDefault` + `searchAndSetDefault`), `forecast.ts` (`option7DayForecast`), `settings.ts` (`optionSettings`), `shared.ts` (`cityLabel`, `showWeather`, `pickCity`, `searchCity`). Barrel `index.ts` re-exports handlers + helpers.
+- `src/api/` — `geocoding.ts` (`geocode`, returns `City[]`, up to `GEO_COUNT=5` candidates, `[]` on error/not-found), `weather.ts` (`getForecast`, `getDailyForecast`).
+- `src/presentation/` — `menu.ts` (the single `MENU_OPTIONS` registry `{ key, label, run }[]`; `label` is a string or `(state) => string`; also hosts `renderMenu`/`printMenu`, `isExit`, `isValidOption`, `getHandler`), `input.ts` (`prompt()` via `globalThis.prompt`, `readSelection`), `output.ts` (`printSeparator`). Separated from actions so handlers can import I/O without a circular import.
+- `src/storage/` — `stateFile.ts` (`STATE_DIR`/`STATE_FILE`, `readStateFile`, `writeStateFile`; legacy `~/.weather-cli/state.json` auto-migrated on first read), `citiesStorage.ts` (`loadCities`, `saveCities`), `settingsStorage.ts` (`Settings`, `loadSettings`, `saveSettings`), `index.ts` (`loadState` composes the above, `saveState`, re-exports `saveCities`/`saveSettings`).
+- `src/types/` — per-domain type files + barrel `index.ts`: `AppState.ts` (`AppState`, `Unit`), `City.ts` (`City`, `GeoResult`, `GeoResponse`), `Weather.ts` (OpenMeteo response shapes, `WeatherDescription`), `MenuOption.ts`.
+- `src/utils/` — `constants.ts` (`GEO_URL`, `FORECAST_URL`, `GEO_COUNT=5`, `EXIT_KEY`), `colors.ts` (`paint(text, color)`; auto-disabled off-TTY), `loading.ts` (`withLoading` braille spinner; auto-disables off-TTY), `format.ts` (`formatTemp`, `formatDay`, `describeWeatherCode` WMO→emoji+Spanish label).
+
+State (`AppState`) lives in `$XDG_CONFIG_HOME/weather-cli/state.json` (default `~/.config/weather-cli/state.json`): `defaultCity`, `cities[]`, `unit`. Actions persist mutations via `saveCities(state, state.cities)` or `saveSettings(state, { … })` from `src/storage`.
+
+## Extending the CLI
+
+To add a menu option:
+
+1. Implement `export async function optionX(state: AppState)` in a new file under `src/actions/` (reuse helpers from `src/actions/shared.ts`) and export it from `src/actions/index.ts`.
+2. Add one entry to `MENU_OPTIONS` in `src/presentation/menu.ts`: `{ key: "N", label: "…", run: optionX }` (`label` may be a string or `(state) => string` for dynamic labels like the cities count or unit).
+
+`renderMenu`, `dispatch` (via `getHandler`), and `isValidOption` pick it up automatically — no edits to `src/index.ts` or `src/presentation/menu.ts` beyond the registry. Option `9` ("Salir") is special-cased: it has a label but no `run`, and the main loop calls `process.exit(0)` from `isExit()` before dispatch reaches it.
+
+## Review checklist
+
+- `check-ideas.md` — open review items for the CLI (colors, AGENTS.md accuracy, geocoding, tests, binary storage, scalability, loading state, 7-day forecast). Items get ticked off as they're implemented.
+
+## Git workflow
+
+Repo root is the **parent** `devtalles/` directory (see Runtime & toolchain). Follow this convention for commits/pushes:
+
+- Allowed branches: `main`, `dev`, `feature/*`, `fix/*`, `hotfix/*`, `refactor/*`, `chore/*`.
+- Feature work goes on a `feature/*` branch; do not commit directly to `main`.
+- Remote `origin` is HTTPS (no SSH); push the branch and open a PR with `gh pr create --base dev` (feature branches target `dev`; `dev`/refactor branches target `main`).
+- Conventional commit messages (`feat:`, `fix:`, `docs:`, `refactor:`, etc.) — no tool/assistant references.
+- Never force-push.
