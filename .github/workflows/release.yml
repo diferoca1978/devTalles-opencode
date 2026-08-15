@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'weatherApp/package.json'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Read version from package.json
+        id: ver
+        working-directory: weatherApp
+        run: |
+          VERSION=$(bun -e "console.log(require('./package.json').version)")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag v<version> already exists
+        id: tagcheck
+        run: |
+          if git ls-remote --tags origin "refs/tags/v${{ steps.ver.outputs.version }}" | grep -q .; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build (test + typecheck + host binary)
+        if: steps.tagcheck.outputs.exists != 'true'
+        working-directory: weatherApp
+        run: bun run build
+
+      - name: Rename host binary
+        if: steps.tagcheck.outputs.exists != 'true'
+        working-directory: weatherApp
+        run: mv weather weather-linux-x64
+
+      - name: Cross-compile linux-arm64
+        if: steps.tagcheck.outputs.exists != 'true'
+        working-directory: weatherApp
+        run: bun build --compile src/index.ts --target bun-linux-arm64 --outfile weather-linux-arm64
+
+      - name: Cross-compile darwin-x64
+        if: steps.tagcheck.outputs.exists != 'true'
+        working-directory: weatherApp
+        run: bun build --compile src/index.ts --target bun-darwin-x64 --outfile weather-darwin-x64
+
+      - name: Cross-compile darwin-arm64
+        if: steps.tagcheck.outputs.exists != 'true'
+        working-directory: weatherApp
+        run: bun build --compile src/index.ts --target bun-darwin-arm64 --outfile weather-darwin-arm64
+
+      - name: Cross-compile windows-x64
+        if: steps.tagcheck.outputs.exists != 'true'
+        working-directory: weatherApp
+        run: bun build --compile src/index.ts --target bun-windows-x64 --outfile weather-windows-x64.exe
+
+      - name: Create tag + release and upload binaries
+        if: steps.tagcheck.outputs.exists != 'true'
+        working-directory: weatherApp
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.ver.outputs.version }}" \
+            --title "v${{ steps.ver.outputs.version }}" \
+            --notes "Weather CLI v${{ steps.ver.outputs.version }} — cross-platform binaries." \
+            weather-linux-x64 \
+            weather-linux-arm64 \
+            weather-darwin-x64 \
+            weather-darwin-arm64 \
+            weather-windows-x64.exe
