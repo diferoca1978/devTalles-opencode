@@ -5,21 +5,27 @@ import type { AppState, City } from "../types";
 import { paint } from "../utils/colors";
 import { cityLabel, searchCity } from "./shared";
 
-export async function searchAndSetDefault(state: AppState): Promise<void> {
+export async function searchAndSetDefault(
+  state: AppState,
+  persist = saveSettings,
+): Promise<void> {
   const city = await searchCity();
   if (!city) return;
-  await saveSettings(state, { defaultCity: city });
+  await persist(state, { defaultCity: city });
   console.log(paint(`  Ciudad default: ${cityLabel(city)}`, "green"));
 }
 
-export async function optionSetDefault(state: AppState): Promise<void> {
+export async function optionSetDefault(
+  state: AppState,
+  persist = saveSettings,
+): Promise<void> {
   const all: City[] = [];
   if (state.defaultCity) all.push(state.defaultCity);
   for (const c of state.cities) {
     if (state.defaultCity?.id !== c.id) all.push(c);
   }
   if (all.length === 0) {
-    await searchAndSetDefault(state);
+    await searchAndSetDefault(state, persist);
     return;
   }
   printSeparator();
@@ -35,7 +41,7 @@ export async function optionSetDefault(state: AppState): Promise<void> {
     return;
   }
   if (idx === all.length) {
-    await searchAndSetDefault(state);
+    await searchAndSetDefault(state, persist);
     return;
   }
   const chosen = all[idx];
@@ -43,6 +49,6 @@ export async function optionSetDefault(state: AppState): Promise<void> {
     console.log(paint("  Selección inválida.", "red"));
     return;
   }
-  await saveSettings(state, { defaultCity: chosen });
+  await persist(state, { defaultCity: chosen });
   console.log(paint(`  Ciudad default: ${cityLabel(chosen)}`, "green"));
 }

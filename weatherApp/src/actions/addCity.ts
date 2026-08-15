@@ -3,7 +3,10 @@ import type { AppState } from "../types";
 import { paint } from "../utils/colors";
 import { cityLabel, searchCity } from "./shared";
 
-export async function optionAddCity(state: AppState): Promise<void> {
+export async function optionAddCity(
+  state: AppState,
+  persist = saveCities,
+): Promise<void> {
   const city = await searchCity();
   if (!city) return;
   const exists =
@@ -14,6 +17,6 @@ export async function optionAddCity(state: AppState): Promise<void> {
     return;
   }
   state.cities.push(city);
-  await saveCities(state, state.cities);
+  await persist(state, state.cities);
   console.log(paint(`  Agregada: ${cityLabel(city)}`, "green"));
 }

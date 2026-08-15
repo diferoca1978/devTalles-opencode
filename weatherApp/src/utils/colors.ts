@@ -1,4 +1,6 @@
-const ENABLED = process.stdout.isTTY && process.env.NO_COLOR === undefined;
+function isColorEnabled(): boolean {
+  return process.stdout.isTTY && process.env.NO_COLOR === undefined;
+}
 
 const RESET = "\x1b[0m";
 const codes = {
@@ -10,6 +12,6 @@ const codes = {
 };
 
 export function paint(text: string, color: keyof typeof codes): string {
-  if (!ENABLED) return text;
+  if (!isColorEnabled()) return text;
   return `${codes[color]}${text}${RESET}`;
 }

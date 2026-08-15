@@ -3,7 +3,7 @@ Revisión Weather CLI
 - [x] **Colores:** no hay ninguno; falta definir cyan (menú), amarillo (temp), verde/rojo (ok/error).
 - [x] **AGENTS.md:** dice que `index.ts` es stub, pero la app ya funciona — hay que actualizarlo.
 - [x] **Ciudades:** geocoding solo trae 1 resultado; nombres ambiguos pueden fallar.
-- [ ] **Tests:** no existen; conviene al menos probar storage y las APIs con mocks.
+- [x] **Tests:** suite automática con `bun:test` para utilidades, CLI, APIs, storage y acciones; las APIs externas se mockean.
 - [x] **Binario:** compila bien; revisar que `./weather` guarde datos en `~/.config/weather-cli/`.
 - [x] **Escalabilidad:** ¿qué tan fácil será expandir con nuevas funcionalidades?
 - [x] **Carga:** ¿hay estado de carga en las tareas asíncronas?
